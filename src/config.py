@@ -19,6 +19,9 @@ class Settings(BaseSettings):
         env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
     )
 
+    def get_auth_data(self):
+        return {"secret_key": self.SECRET_KEY, "algorithm": self.ALGORITHM}
+
     @property
     def DATABASE_URI(self) -> str: #noqa
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
