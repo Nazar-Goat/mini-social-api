@@ -1,5 +1,6 @@
 from functools import lru_cache
-from pydantic import BaseSettings
+from pydantic import BaseSettings, SettingsConfigDict
+import os 
 
 class Settings(BaseSettings):
     APP_NAME : str = "Mini Sicial API"
@@ -14,8 +15,12 @@ class Settings(BaseSettings):
     ALGORITHM : str
     ACCESS_TOKEN_EXPIRE_MINUTES : int
 
+    model_config = SettingsConfigDict(
+        env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+    )
+
     @property
-    def database_url(self) -> str: #noqa
+    def DATABASE_URI(self) -> str: #noqa
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
 @lru_cache()
