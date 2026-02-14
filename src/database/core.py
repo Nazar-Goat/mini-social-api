@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import AsyncAttrs, async_session_maker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
 from datetime import datetime
 from typing import Annotated
@@ -6,7 +6,7 @@ from typing import Annotated
 from sqlalchemy import Integer, func
 from sqlalchemy.orm import DeclarativeBase, declared_attr, Mapped, mapped_column
 
-from config import get_settings
+from src.config import get_settings
 
 settings = get_settings()
 
@@ -15,7 +15,7 @@ DATABASE_URI = settings.DATABASE_URI
 #create async engine for database connection
 engine = create_async_engine(DATABASE_URI)
 #create async session fabric  for database sessions
-async_session_maker = async_session_maker(engine, expire_on_commit=False)
+async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 # annotation constants for common column types
 int_pk = Annotated[int, mapped_column(primary_key=True)]
