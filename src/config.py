@@ -1,5 +1,5 @@
 from functools import lru_cache
-from pydantic import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import os 
 
 class Settings(BaseSettings):
