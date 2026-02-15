@@ -3,10 +3,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 import os 
 
 class Settings(BaseSettings):
-    APP_NAME : str = "Mini Sicial API"
+    APP_NAME : str = "Mini Social API"
 
     DB_HOST : str
-    DB_PORT : str
+    DB_PORT : int
     DB_USER : str
     DB_PASS : str
     DB_NAME : str
