@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from src.config import get_auth_data, get_settings
+from src.config import  get_settings
 from jose import jwt
 from datetime import datetime, timedelta, timezone
 
@@ -18,7 +18,7 @@ def create_access_token(user_id: int) -> str:
     
     now= datetime.now(timezone.utc)
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "type": "access",
         "iat": now,
         "exp": now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
@@ -26,8 +26,6 @@ def create_access_token(user_id: int) -> str:
 
     return jwt.encode(payload, settings.get_auth_data()["secret_key"], algorithm=settings.get_auth_data()["algorithm"])
     
-
-
 def create_refresh_token(user_id: int) -> str:
     settings = get_settings()
     
