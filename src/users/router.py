@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from src.users.schemas import UserRegister, UserOut, TokenOut, UserLogin
-from src.users.dependencies import get_user_service
+from src.users.dependencies import get_user_service, get_current_user
 from src.users.services import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -39,3 +39,15 @@ async def Login(
     """
     return await user_service.login(user_data)
 
+@router.get("/me", response_model=UserOut, status_code=status.HTTP_200_OK)
+async def read_current_user(
+    current_user: UserOut = Depends(get_current_user)
+) -> UserOut:
+    """
+    Get the currently authenticated user's information.
+
+    - Requires a valid JWT access token in the Authorization header
+    - Returns the user's details as a UserOut DTO
+    - Raises 401 if the token is invalid or user not found
+    """
+    return current_user
