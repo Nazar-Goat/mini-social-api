@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import  BaseModel,  EmailStr, Field, ValidationError
+from pydantic import  BaseModel,  EmailStr, Field, ConfigDict
 
 class UserRegister(BaseModel):
     first_name: str 
@@ -9,8 +9,7 @@ class UserRegister(BaseModel):
     email: EmailStr 
     password: str = Field(min_length=8)
 
-    class Config:
-        extra = "forbid"
+    
 
 
 class UserLogin(BaseModel):
@@ -25,8 +24,7 @@ class UserOut(BaseModel):
     username: str
     email: EmailStr
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TokenOut(BaseModel):
