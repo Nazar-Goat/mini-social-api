@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI): # noqa
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(api_router)
-app.include_router(users_router)
+app.include_router(users_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

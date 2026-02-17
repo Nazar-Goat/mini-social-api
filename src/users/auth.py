@@ -31,7 +31,7 @@ def create_refresh_token(user_id: int) -> str:
     
     now= datetime.now(timezone.utc)
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "type": "refresh",
         "iat": now,
         "exp": now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),

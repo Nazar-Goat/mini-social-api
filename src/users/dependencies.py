@@ -24,11 +24,18 @@ async def get_current_user(
             detail="Invalid authentication credentials",
         )
     
-    user_id: int = int(payload.get("sub"))
-    if user_id is None: 
+    raw_user_id: str = payload.get("sub")
+    if raw_user_id is None: 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
+        )
+    try:
+        user_id = int(raw_user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user ID in token",
         )
     user_repository = UserRepository(session)
     user = await user_repository.get_user_by_id(user_id)
