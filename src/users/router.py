@@ -25,7 +25,7 @@ async def register(
     return await user_service.register(user_data)
 
 @router.post("/login", response_model=TokenOut, status_code=status.HTTP_200_OK)
-async def Login(
+async def login(
     user_data: UserLogin,
     user_service: UserService = Depends(get_user_service)
 ) -> TokenOut:
