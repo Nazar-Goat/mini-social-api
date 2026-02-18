@@ -25,7 +25,8 @@ class PostRepository:
         result = await self.session.execute(query)
         return result.scalars().all()
     
-    async def create_post(self, post: Post) -> Post:
+    async def create_post(self, post: Post, author_id: int) -> Post:
+        post.author_id = author_id
         self.session.add(post)
         await self.session.flush()
         await self.session.refresh(post)
