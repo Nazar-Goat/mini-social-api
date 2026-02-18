@@ -14,6 +14,7 @@ sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
 from src.database.core import DATABASE_URI, Base
 from src.users.models import User
+from src.posts.models import Post
 
 
 # this is the Alembic Config object, which provides
