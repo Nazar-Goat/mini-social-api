@@ -12,5 +12,5 @@ class Post(Base):
         ForeignKey("users.id"), index=True, nullable=False
     )
 
-    user: Mapped["User"] = relationship("User", back_populates="posts") # type: ignore
+    author: Mapped["User"] = relationship("User", back_populates="posts") # type: ignore
     
