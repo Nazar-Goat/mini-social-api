@@ -1,4 +1,4 @@
-from pydantic import BaseModel 
+from pydantic import BaseModel, ConfigDict 
 from datetime import datetime
 
 class PostCreate(BaseModel):
@@ -15,7 +15,7 @@ class AuthorOut(BaseModel):
     id: int
     email: str
 
-    from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PostOut(BaseModel):
@@ -24,4 +24,6 @@ class PostOut(BaseModel):
     content: str
     author: AuthorOut
     created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
     
