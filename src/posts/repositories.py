@@ -9,7 +9,7 @@ class PostRepository:
         self.session = session
 
     async def get_post_by_id(self, post_id: int) -> Post | None:
-        query = select(Post).where(Post.id == post_id)
+        query = select(Post).options(joinedload(Post.author)).where(Post.id == post_id)
         result = await self.session.execute(query)
         return result.scalars().first()
     
@@ -25,8 +25,7 @@ class PostRepository:
         result = await self.session.execute(query)
         return result.scalars().all()
     
-    async def create_post(self, post: Post, author_id: int) -> Post:
-        post.author_id = author_id
+    async def create_post(self, post: Post) -> Post:
         self.session.add(post)
         await self.session.flush()
         await self.session.refresh(post)
