@@ -1,6 +1,7 @@
-from sqlalchemy import select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy import select, func
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from src.likes.models import Like
 
@@ -17,20 +18,30 @@ class LikeRepository:
         result = await self.session.execute(query)
         return result.scalars().first()
     
-    async def get_likes_by_post_id(self, post_id: int) -> list[Like]:
+    async def get_like(self, post_id: int, user_id: int) -> Like | None:
         query = (
             select(Like)
-            .options(joinedload(Like.user))
-            .where(Like.post_id == post_id)
+            .where(Like.post_id == post_id, Like.user_id == user_id)
         )
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return result.scalars().first()
+    
+    async def count_post_likes(self, post_id: int) -> int:
+        query = select(func.count()).select_from(Like).where(
+            Like.post_id == post_id
+        )
+        result = await self.session.execute(query)
+        return result.scalar() or 0
     
     async def create_like(self, like: Like) -> Like:
-        self.session.add(like)
-        await self.session.flush()
-        await self.session.refresh(like)
-        return like     
+        try: 
+            self.session.add(like)
+            await self.session.flush()
+            await self.session.refresh(like)
+            return like 
+        except IntegrityError:
+            await self.session.rollback()
+            return None   
     
     async def delete_like(self, like: Like) -> None:
         await self.session.delete(like)
