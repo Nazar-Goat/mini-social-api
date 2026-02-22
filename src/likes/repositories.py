@@ -8,15 +8,6 @@ from src.likes.models import Like
 class LikeRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
-
-    async def get_like_by_id(self, like_id: int) -> Like | None:
-        query = (
-            select(Like)
-            .options(joinedload(Like.post), joinedload(Like.user))
-            .where(Like.id == like_id)
-        )
-        result = await self.session.execute(query)
-        return result.scalars().first()
     
     async def get_like(self, post_id: int, user_id: int) -> Like | None:
         query = (
