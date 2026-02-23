@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from src.router import api_router
 from src.users.router import router as users_router
 from src.posts.router import router as posts_router
+from src.likes.router import router as likes_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): # noqa
@@ -21,6 +22,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(api_router)
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(posts_router, prefix="/api/v1")
+app.include_router(likes_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
