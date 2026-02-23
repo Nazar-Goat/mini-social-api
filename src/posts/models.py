@@ -13,4 +13,7 @@ class Post(Base):
     )
 
     author: Mapped["User"] = relationship("User", back_populates="posts") # type: ignore
+    likes: Mapped[list["Like"]] = relationship("Like", back_populates="post") # type: ignore
+
+
     
