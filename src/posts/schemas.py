@@ -23,6 +23,7 @@ class PostOut(BaseModel):
     title: str
     content: str
     author: AuthorOut
+    likes_count: int = 0
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

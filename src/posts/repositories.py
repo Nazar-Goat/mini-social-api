@@ -1,5 +1,6 @@
+from httpx import post
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.posts.models import Post
@@ -9,9 +10,21 @@ class PostRepository:
         self.session = session
 
     async def get_post_by_id(self, post_id: int) -> Post | None:
-        query = select(Post).options(joinedload(Post.author)).where(Post.id == post_id)
+        query = (
+            select(Post)
+            .options(
+                joinedload(Post.author),
+                selectinload(Post.likes)
+            )
+            .where(Post.id == post_id)
+        )
         result = await self.session.execute(query)
-        return result.scalars().first()
+        post = result.scalars().first()
+
+        if post:
+            post.likes_count = len(post.likes)
+    
+        return post
     
     async def get_all_posts(self, limit: int=10, offset: int=0) -> list[Post]:
         query = (
