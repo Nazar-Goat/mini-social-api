@@ -2,11 +2,15 @@ from abc import ABC, abstractmethod
 from typing import Type
 
 from src.database.core import async_session_maker
-
+from src.users.repositories import  UserRepository
+from src.posts.repositories import PostRepository
+from src.likes.repositories import LikeRepository
 
 
 class IUnitOfWork(ABC):
-
+    users: Type[UserRepository]
+    posts: Type[PostRepository]
+    likes: Type[LikeRepository]
 
     @abstractmethod
     def __init__(self): ...
@@ -29,6 +33,10 @@ class UnitOfWork:
         self.session_factory = async_session_maker
 
     async def __aenter__(self):
+        self.session = self.session_factory()
+        self.users = UserRepository(self.session)
+        self.posts = PostRepository(self.session)
+        self.likes = LikeRepository(self.session)
         return self
 
     async def __aexit__(self, *args):
