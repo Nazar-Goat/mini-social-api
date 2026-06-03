@@ -1,47 +1,59 @@
-from src.likes.repositories import LikeRepository
-from src.likes.models import Like
-
-from src.posts.repositories import PostRepository
-
 from fastapi import HTTPException, status
 
+from src.likes.schemas import LikeResponse
+from src.redis.service import redis_service
+from src.unitofwork import IUnitOfWork
+
+
 class LikeService:
-    def __init__(self, like_repository: LikeRepository, post_repository: PostRepository):
-        self.like_repository = like_repository
-        self.post_repository = post_repository
 
-    async def like_post(self, post_id: int, user_id: int) -> dict:
-        post = await self.post_repository.get_post_by_id(post_id)
-        if not post:
+    @staticmethod
+    async def like_post(uow: IUnitOfWork, post_id: int, user_id: int) -> LikeResponse:
+        # Rate limit: 30 лайків / 60 секунд на користувача
+        allowed = await redis_service.check_like_rate_limit(user_id)
+        if not allowed:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Post not found"
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Like rate limit exceeded. Try again later.",
             )
-        
-        existing_like = await self.like_repository.get_like(post_id, user_id)
-        if existing_like:
-            await self.like_repository.session.commit()
-            return {"message": "Post already liked", "action": "none"}
-        
-        like = Like(post_id=post_id, user_id=user_id)
-        created_like = await self.like_repository.create_like(like)
 
-        if not created_like:
-            self.like_repository.session.commit()
-            return {"message": "Post already liked", "action": "none"}
-        
-        await self.like_repository.session.commit()
-        return {"message": "Post liked", "action": "liked"}
-    
-    async def unlike_post(self, post_id: int, user_id: int) -> dict:
-        like = await self.like_repository.get_like(post_id, user_id)
-        if not like:
-            await self.like_repository.session.commit()
-            return {"message": "Post not liked yet", "action": "none"}
-        
-        await self.like_repository.delete_like(like)
-        await self.like_repository.session.commit()
-        return {"message": "Post unliked", "action": "unliked"}
-    
+        async with uow:
+            post = await uow.posts.get_by_id(post_id)
 
+            if not post:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Post not found",
+                )
 
+            existing = await uow.likes.get_like(post_id=post_id, user_id=user_id)
+
+            if existing:
+                return LikeResponse(message="Post already liked", action="none")
+
+            created = await uow.likes.create_like(post_id=post_id, user_id=user_id)
+
+            if not created:
+                # IntegrityError — race condition, лайк вже є
+                return LikeResponse(message="Post already liked", action="none")
+
+            await uow.commit()
+
+        await redis_service.invalidate_posts_cache()
+
+        return LikeResponse(message="Post liked", action="liked")
+
+    @staticmethod
+    async def unlike_post(uow: IUnitOfWork, post_id: int, user_id: int) -> LikeResponse:
+        async with uow:
+            existing = await uow.likes.get_like(post_id=post_id, user_id=user_id)
+
+            if not existing:
+                return LikeResponse(message="Post not liked yet", action="none")
+
+            await uow.likes.remove_like(post_id=post_id, user_id=user_id)
+            await uow.commit()
+
+        await redis_service.invalidate_posts_cache()
+
+        return LikeResponse(message="Post unliked", action="unliked")

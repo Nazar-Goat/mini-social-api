@@ -1,27 +1,36 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, status
 
-from src.likes.dependencies import get_like_service
+from src.dependencies import CurrentUser, UOW
 from src.likes.schemas import LikeResponse
 from src.likes.services import LikeService
-from src.users.dependencies import get_current_user
-from src.users.models import User
 
-router = APIRouter(prefix="/posts", tags=["likes"])
 
-@router.post("/{post_id}/like", response_model=LikeResponse, status_code=status.HTTP_200_OK)
+likes_router = APIRouter(prefix="/posts", tags=["Likes"])
+
+like_service = LikeService()
+
+
+@likes_router.post(
+    "/{post_id}/like",
+    response_model=LikeResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def like_post(
     post_id: int,
-    current_user: User = Depends(get_current_user),
-    like_service: LikeService = Depends(get_like_service)
-):
-    result = await like_service.like_post(post_id, current_user.id)
-    return LikeResponse(**result)
+    uow: UOW,
+    current_user: CurrentUser,
+) -> LikeResponse:
+    return await like_service.like_post(uow, post_id, current_user.id)
 
-@router.delete("/{post_id}/like", response_model=LikeResponse, status_code=status.HTTP_200_OK)
+
+@likes_router.delete(
+    "/{post_id}/like",
+    response_model=LikeResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def unlike_post(
     post_id: int,
-    current_user: User = Depends(get_current_user),
-    like_service: LikeService = Depends(get_like_service)
-):
-    result = await like_service.unlike_post(post_id, current_user.id)
-    return LikeResponse(**result)
+    uow: UOW,
+    current_user: CurrentUser,
+) -> LikeResponse:
+    return await like_service.unlike_post(uow, post_id, current_user.id)

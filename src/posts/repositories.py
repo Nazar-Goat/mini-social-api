@@ -1,53 +1,102 @@
-
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import joinedload, selectinload
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.likes.models import Like
 from src.posts.models import Post
+from src.repositories import SQLRepository
 
-class PostRepository:
-    def __init__(self, session: AsyncSession):
-        self.session = session
 
-    async def get_post_by_id(self, post_id: int) -> Post | None:
-        query = (
-            select(Post)
+class PostRepository(SQLRepository):
+    model = Post
+
+    async def get_by_id(self, post_id: int) -> Post | None:
+        stmt = (
+            select(self.model)
             .options(
-                joinedload(Post.author),
-                selectinload(Post.likes)
+                joinedload(self.model.author),
+                selectinload(self.model.likes),
             )
-            .where(Post.id == post_id)
+            .where(self.model.id == post_id)
         )
-        result = await self.session.execute(query)
-        post = result.scalars().first()
+        res = await self.session.execute(stmt)
+        post = res.scalar_one_or_none()
 
-        if post:
+        if post is not None:
             post.likes_count = len(post.likes)
-    
+
         return post
-    
-    async def get_all_posts(self, limit: int=10, offset: int=0) -> list[Post]:
-        query = (
-            select(Post)
-            .options(joinedload(Post.author))
-            .order_by(Post.created_at.desc())
-            .limit(limit)
-            .offset(offset)
+
+    async def get_list(
+        self,
+        limit: int,
+        offset: int,
+        author_id: int | None = None,
+        search: str | None = None,
+        sort: str = "created_at",
+        order: str = "desc",
+    ) -> list[Post]:
+        stmt = (
+            select(self.model)
+            .options(
+                joinedload(self.model.author),
+                selectinload(self.model.likes),
+            )
         )
 
-        result = await self.session.execute(query)
-        return result.scalars().all()
-    
-    async def create_post(self, post: Post) -> Post:
-        self.session.add(post)
-        await self.session.flush()
-        await self.session.refresh(post)
-        return post
-    
-    async def update_post(self, post: Post ) -> Post:
-        await self.session.flush()
-        await self.session.refresh(post)
+        if author_id is not None:
+            stmt = stmt.where(self.model.author_id == author_id)
 
-    async def delete_post(self, post: Post) -> None:
-        await self.session.delete(post)
-        await self.session.flush()
+        if search:
+            stmt = stmt.where(
+                or_(
+                    self.model.title.ilike(f"%{search}%"),
+                    self.model.content.ilike(f"%{search}%"),
+                )
+            )
+
+        # Sorting: created_at or likes count
+        if sort == "likes":
+            likes_count_subq = (
+                select(Like.post_id, func.count(Like.id).label("likes_count"))
+                .group_by(Like.post_id)
+                .subquery()
+            )
+            stmt = stmt.outerjoin(
+                likes_count_subq, self.model.id == likes_count_subq.c.post_id
+            )
+            order_col = likes_count_subq.c.likes_count
+        else:
+            order_col = self.model.created_at
+
+        from sqlalchemy import asc, desc
+        stmt = stmt.order_by(desc(order_col) if order == "desc" else asc(order_col))
+        stmt = stmt.limit(limit).offset(offset)
+
+        res = await self.session.execute(stmt)
+        posts = res.unique().scalars().all()
+
+        for post in posts:
+            post.likes_count = len(post.likes)
+
+        return posts
+
+    async def create(self, data: dict) -> Post:
+        stmt = (
+            select(self.model)
+            .options(
+                joinedload(self.model.author),
+                selectinload(self.model.likes),
+            )
+            .where(self.model.id == await self.add(data))
+        )
+        res = await self.session.execute(stmt)
+        post = res.scalar_one()
+        post.likes_count = 0
+        return post
+
+    async def update(self, post_id: int, data: dict) -> Post:
+        await self.edit(element_id=post_id, data=data)
+        return await self.get_by_id(post_id)
+
+    async def remove(self, post_id: int) -> None:
+        await self.delete(post_id)
