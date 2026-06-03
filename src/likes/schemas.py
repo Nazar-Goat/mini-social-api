@@ -1,5 +1,5 @@
-from pydantic import BaseModel, ConfigDict 
-from datetime import datetime
+from pydantic import BaseModel
+
 
 class LikeResponse(BaseModel):
     message: str

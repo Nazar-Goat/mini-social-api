@@ -1,6 +1,5 @@
 name: mini-social-api
 
-
 services:
   server:
     restart: always
@@ -13,14 +12,12 @@ services:
       - DOCKERIZED=1
     ports:
       - ${APP_PORT}:${APP_PORT}
-    volumes:
-      - ./docker_data/logs:/var/opt/log
     networks:
       - mini-social-api
     depends_on:
       db:
         condition: service_healthy
-      rabbitmq:
+      redis_db:
         condition: service_healthy
 
   db:
@@ -39,7 +36,7 @@ services:
     networks:
       - mini-social-api
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_POSTGRES_USER} -d ${DB_POSTGRES_NAME}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_POSTGRES_USER} -d ${DB_POSTGRES_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -66,4 +63,4 @@ services:
 networks:
   mini-social-api:
     driver: bridge
-    name: crocus-crm
+    name: mini-social-api

@@ -1,12 +1,11 @@
-from typing import Annotated
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from pydantic import  BaseModel,  EmailStr, Field, ConfigDict
 
 class UserRegister(BaseModel):
-    first_name: str 
-    last_name: str 
+    first_name: str
+    last_name: str
     username: str
-    email: EmailStr 
+    email: EmailStr
     password: str = Field(min_length=8)
 
 

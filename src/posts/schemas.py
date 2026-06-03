@@ -1,14 +1,16 @@
-from pydantic import BaseModel, ConfigDict 
 from datetime import datetime
 
+from pydantic import BaseModel, ConfigDict
+
+
 class PostCreate(BaseModel):
-    title: str 
+    title: str
     content: str
-    
+
 
 class PostUpdate(BaseModel):
     title: str | None = None
-    content: str | None = None 
+    content: str | None = None
 
 
 class AuthorOut(BaseModel):
@@ -27,4 +29,8 @@ class PostOut(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-    
+
+
+class PostListOut(BaseModel):
+    posts: list[PostOut]
+    total: int
